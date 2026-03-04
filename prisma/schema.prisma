@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 Int             @id @default(autoincrement())
+  username           String          @unique
+  password           String
+  displayName        String?
+  role               String
+  isEnabled          Boolean         @default(true)
+  createdAt          DateTime        @default(now())
+  salesAccountsCreated SalesAccount[] @relation("SalesAccountCreator")
+  salesAccountsOwned SalesAccount[]  @relation("SalesAccountPromoter")
+  marketingCreated   MarketingData[] @relation("MarketingDataCreator")
+  marketingPartTime  MarketingData[] @relation("MarketingDataPartTime")
+}
+
+model SalesAccount {
+  id             Int             @id @default(autoincrement())
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  promoter       String
+  wechatNickname String
+  wechatId       String          @unique
+  remark         String?
+  isEnabled      Boolean         @default(true)
+  createdById    Int?
+  promoterUserId Int?
+  createdBy      User?           @relation("SalesAccountCreator", fields: [createdById], references: [id])
+  promoterUser   User?           @relation("SalesAccountPromoter", fields: [promoterUserId], references: [id])
+  marketingData  MarketingData[]
+
+  @@index([createdById])
+  @@index([promoterUserId])
+  @@index([promoter])
+  @@index([isEnabled])
+}
+
+model MarketingData {
+  id               Int         @id @default(autoincrement())
+  date             DateTime
+  addFriendsCount  Int
+  conversionCount  Int
+  salesAccountId   Int
+  partTimeUserId   Int?
+  createdById      Int?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  salesAccount     SalesAccount @relation(fields: [salesAccountId], references: [id])
+  partTimeUser     User?       @relation("MarketingDataPartTime", fields: [partTimeUserId], references: [id])
+  createdBy        User?       @relation("MarketingDataCreator", fields: [createdById], references: [id])
+
+  @@index([date])
+  @@index([salesAccountId])
+  @@index([partTimeUserId])
+  @@index([salesAccountId, date])
+}

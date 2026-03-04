@@ -1,36 +1,148 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 销售管理系统（Next.js）
 
-## Getting Started
+基于 `Next.js + shadcn/ui + Tailwind CSS + sonner + MySQL + Prisma` 的多角色销售管理中台示例。
 
-First, run the development server:
+## 约定（已执行）
+
+- 数据库中**不使用枚举类型（ENUM）**。
+- 用户角色字段 `User.role` 使用字符串字段（`VARCHAR`），并在代码中通过常量 `APP_ROLES` 约束可选值。
+- 该约定已落地到 Prisma 模型、接口校验、种子数据、前端角色逻辑。
+
+## 当前已完成功能
+
+### 栏目一：销售账号添加
+- 创建日期（默认当天，不可修改）
+- 发展人
+- 销售微信号昵称
+- 销售微信号（唯一）
+- 备注
+
+### 栏目二：销售账号管理
+- 列表字段：创建日期、发展人、销售微信号昵称、销售微信号、备注、状态
+- 支持按发展人筛选
+- 支持按微信昵称/微信号关键词搜索
+- 支持编辑备注
+- 支持停用/启用
+
+### 栏目三：营销数据添加
+- 日期（默认当天）
+- 销售微信选择（支持搜索昵称或微信号）
+- 添加好友数量
+- 转化人数
+- 兼职人员
+
+### 栏目四：营销数据看板
+- 筛选：发展人、销售微信昵称/微信号关键词、兼职人员、时间范围
+- 折线图：
+  - 每日添加好友数量趋势（按销售账号）
+  - 每日转化人数趋势（按销售账号）
+- 汇总统计：
+  - 总添加好友数、总转化人数、总平均转化率
+  - 日添加好友数（结束日期）、日转化人数（结束日期）、日平均转化率（结束日期）
+
+### 栏目五：用户管理
+- 用户类型：管理员、发展人、兼职
+- 支持按角色/状态/关键词筛选
+- 支持新增用户
+- 支持编辑用户（姓名、角色、重置密码）
+- 支持启用/停用
+
+## 发展人端（已完成）
+
+- 仅管理与查看“自己名下”的数据（后端查询层做了归属限制）
+- 我的销售账号：
+  - 仅显示本人名下销售账号
+  - 支持微信昵称/微信号搜索
+  - 支持备注编辑
+  - 支持启用/停用
+- 我的营销看板：
+  - 支持筛选销售微信昵称或微信号
+  - 支持筛选时间范围
+  - 折线图支持查看：
+    - 各销售账号每天添加好友数量
+    - 所有销售账号总新增每天添加好友数量
+
+## 角色与登录
+
+统一登录入口：`/login`
+
+示例账号：
+- 管理员：`admin / admin123456`
+- 发展人：`promoter_zhang / promoter123`
+- 兼职：`parttime_liu / parttime123`
+
+## 技术栈
+
+- Next.js（App Router）
+- Tailwind CSS
+- shadcn/ui
+- sonner
+- Prisma + MySQL
+
+## 本地启动
+
+### 1. 环境要求
+- Node.js 20+
+- MySQL 8+
+
+### 2. 配置 `.env`
+
+```env
+DATABASE_URL="mysql://root:password@127.0.0.1:3306/sales_manager"
+SESSION_SECRET="please-change-this-session-secret"
+ADMIN_INIT_USERNAME="admin"
+ADMIN_INIT_PASSWORD="admin123456"
+```
+
+### 3. 安装依赖
+
+```bash
+npm install
+```
+
+### 4. 同步数据库并初始化数据
+
+```bash
+npm run prisma:generate
+npm run prisma:push
+npm run prisma:seed
+```
+
+### 5. 启动项目
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+访问：`http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 主要路由
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- 登录页：`/login`
+- 仪表盘入口：`/dashboard`
+- 管理员 - 销售账号管理：`/dashboard/admin/sales-accounts`
+- 管理员 - 销售账号添加：`/dashboard/admin/sales-accounts/new`
+- 管理员 - 营销数据添加：`/dashboard/admin/marketing-data/new`
+- 管理员 - 营销数据看板：`/dashboard/admin/marketing-dashboard`
+- 管理员 - 用户管理：`/dashboard/admin/users`
+- 发展人占位页：`/dashboard/promoter`
+- 发展人 - 我的销售账号：`/dashboard/promoter/sales-accounts`
+- 发展人 - 我的营销看板：`/dashboard/promoter/marketing-dashboard`
+- 兼职占位页：`/dashboard/part-time`
 
-## Learn More
+## GitHub 推送规范（必须遵守）
 
-To learn more about Next.js, take a look at the following resources:
+- 每次推送到 GitHub 前，必须创建并推送一个版本 Tag。
+- 版本号建议使用语义化格式：`v主版本.次版本.修订号`，例如：`v1.3.0`。
+- 每次更新内容说明必须使用中文（包括提交说明、发布说明或变更记录）。
+- 不允许“仅推送代码不打 Tag”的发布方式。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+推荐流程示例：
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+git add .
+git commit -m "中文：本次更新内容说明"
+git tag -a v1.0.0 -m "中文：v1.0.0 更新内容说明"
+git push origin <分支名>
+git push origin v1.0.0
+```
