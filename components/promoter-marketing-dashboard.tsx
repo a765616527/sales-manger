@@ -20,11 +20,11 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const colorPalette = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
   "#ef4444",
   "#0ea5e9",
   "#10b981",
@@ -127,7 +127,7 @@ export function PromoterMarketingDashboard() {
     () => ({
       total: {
         label: "全部销售账号总新增",
-        color: "hsl(var(--chart-1))",
+        color: "var(--chart-1)",
       },
     }),
     [],

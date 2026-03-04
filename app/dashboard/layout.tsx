@@ -18,7 +18,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <SidebarProvider>
       <AppSidebar user={session} />
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between border-b border-border/70 bg-background/72 px-4 shadow-[0_10px_28px_-24px_rgba(15,23,42,0.8)] backdrop-blur-xl supports-[backdrop-filter]:bg-background/58">
           <div className="flex items-center gap-2">
             <SidebarTrigger />
             <Separator orientation="vertical" className="mx-2 h-4" />
@@ -26,12 +26,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge variant="outline">{ROLE_LABEL[session.role]}</Badge>
+            <Badge className="border-primary/25 bg-primary/10 text-primary" variant="outline">
+              {ROLE_LABEL[session.role]}
+            </Badge>
             <span className="text-sm text-muted-foreground">{session.username}</span>
           </div>
         </header>
 
-        <main className="min-h-[calc(100svh-56px)] bg-muted/20 p-4 md:p-6">{children}</main>
+        <main className="min-h-[calc(100svh-56px)] bg-transparent p-4 md:p-6">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );
