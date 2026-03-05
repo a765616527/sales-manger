@@ -2,10 +2,19 @@
 set -euo pipefail
 
 COMPOSE_FILE="docker-compose.yml"
+COMPOSE_URL="https://raw.githubusercontent.com/a765616527/sales-manger/refs/heads/main/docker-compose.yml"
+SCRIPT_URL="https://raw.githubusercontent.com/a765616527/sales-manger/refs/heads/main/deploy.sh"
 
 if [[ ! -f "$COMPOSE_FILE" ]]; then
-  echo "未找到 $COMPOSE_FILE"
-  exit 1
+  if ! command -v curl >/dev/null 2>&1; then
+    echo "未找到 $COMPOSE_FILE，且系统未安装 curl，无法自动下载。"
+    echo "请手动下载：$COMPOSE_URL"
+    exit 1
+  fi
+
+  echo "未找到 $COMPOSE_FILE，正在下载..."
+  curl -fsSL "$COMPOSE_URL" -o "$COMPOSE_FILE"
+  echo "已下载 $COMPOSE_FILE"
 fi
 
 if ! command -v docker >/dev/null 2>&1; then
@@ -17,6 +26,9 @@ if ! docker compose version >/dev/null 2>&1; then
   echo "未检测到 docker compose 插件，请先安装。"
   exit 1
 fi
+
+echo "脚本下载地址：$SCRIPT_URL"
+echo "Compose 下载地址：$COMPOSE_URL"
 
 get_compose_value() {
   local key="$1"

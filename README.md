@@ -140,7 +140,16 @@ npm run dev
 ### 一键部署命令
 
 ```bash
+# 1) 下载 Docker Compose 文件
+curl -fsSL "https://raw.githubusercontent.com/a765616527/sales-manger/refs/heads/main/docker-compose.yml" -o docker-compose.yml
+
+# 2) 下载部署脚本
+curl -fsSL "https://raw.githubusercontent.com/a765616527/sales-manger/refs/heads/main/deploy.sh" -o deploy.sh
+
+# 3) 赋予脚本执行权限
 chmod +x deploy.sh
+
+# 4) 执行一键部署
 ./deploy.sh
 ```
 
