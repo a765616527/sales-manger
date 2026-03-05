@@ -7,12 +7,27 @@ import { prisma } from "@/lib/prisma";
 
 const updateSalesAccountSchema = z
   .object({
+    wechatNickname: z.string().trim().min(1, "请输入销售微信号昵称").optional(),
+    wechatId: z
+      .string()
+      .trim()
+      .min(1, "请输入销售微信号")
+      .max(64, "销售微信号长度不能超过 64")
+      .regex(/^[A-Za-z][-_A-Za-z0-9]{5,63}$/, "销售微信号格式不正确")
+      .optional(),
     remark: z.string().max(500, "备注最多 500 字").optional(),
     isEnabled: z.boolean().optional(),
   })
-  .refine((data) => data.remark !== undefined || data.isEnabled !== undefined, {
+  .refine(
+    (data) =>
+      data.wechatNickname !== undefined ||
+      data.wechatId !== undefined ||
+      data.remark !== undefined ||
+      data.isEnabled !== undefined,
+    {
     message: "至少更新一个字段",
-  });
+    },
+  );
 
 export async function PATCH(
   request: NextRequest,
@@ -47,6 +62,14 @@ export async function PATCH(
 
     const updateData: Prisma.SalesAccountUpdateInput = {};
 
+    if (parsed.data.wechatNickname !== undefined) {
+      updateData.wechatNickname = parsed.data.wechatNickname;
+    }
+
+    if (parsed.data.wechatId !== undefined) {
+      updateData.wechatId = parsed.data.wechatId;
+    }
+
     if (parsed.data.remark !== undefined) {
       const remark = parsed.data.remark.trim();
       updateData.remark = remark.length > 0 ? remark : null;
@@ -61,6 +84,8 @@ export async function PATCH(
       data: updateData,
       select: {
         id: true,
+        wechatNickname: true,
+        wechatId: true,
         remark: true,
         isEnabled: true,
       },
@@ -71,6 +96,10 @@ export async function PATCH(
       data: updated,
     });
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return NextResponse.json({ message: "销售微信号已存在，请勿重复填写" }, { status: 409 });
+    }
+
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
       return NextResponse.json({ message: "销售账号不存在" }, { status: 404 });
     }

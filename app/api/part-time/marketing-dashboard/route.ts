@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
   for (const item of records) {
     if (!seriesMap.has(item.salesAccountId)) {
       const key = `s_${item.salesAccountId}`;
-      const label = `${item.salesAccount.wechatNickname}（${item.salesAccount.wechatId}）`;
+      const label = item.salesAccount.wechatId;
 
       seriesMap.set(item.salesAccountId, {
         key,

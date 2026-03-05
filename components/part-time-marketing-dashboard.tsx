@@ -229,16 +229,14 @@ export function PartTimeMarketingDashboard() {
                 className="h-auto min-h-10 w-full justify-between gap-2 py-2 text-left whitespace-normal"
               >
                 <span className="min-w-0 flex-1 break-all leading-5">
-                  {selectedSalesAccount
-                    ? `${selectedSalesAccount.wechatNickname}（${selectedSalesAccount.wechatId}）`
-                    : "全部销售微信"}
+                  {selectedSalesAccount ? selectedSalesAccount.wechatId : "全部销售微信"}
                 </span>
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[min(92vw,420px)] max-w-[420px] p-0" align="start" sideOffset={8} collisionPadding={12}>
               <Command>
-                <CommandInput placeholder="搜索微信昵称或微信号" />
+                <CommandInput placeholder="搜索微信号" />
                 <CommandList className="max-h-[60svh]">
                   <CommandEmpty>未找到匹配销售微信</CommandEmpty>
                   <CommandGroup>
@@ -262,7 +260,7 @@ export function PartTimeMarketingDashboard() {
                       <CommandItem
                         key={item.id}
                         className="items-start py-2"
-                        value={`${item.wechatNickname} ${item.wechatId}`}
+                        value={`${item.wechatId} ${item.wechatNickname}`}
                         onSelect={() => {
                           setSalesAccountId(String(item.id));
                           setSalesSelectorOpen(false);
@@ -271,10 +269,7 @@ export function PartTimeMarketingDashboard() {
                         <Check
                           className={cn("mr-2 h-4 w-4", salesAccountId === String(item.id) ? "opacity-100" : "opacity-0")}
                         />
-                        <div className="flex min-w-0 flex-1 flex-col">
-                          <span className="break-all leading-5">{item.wechatNickname}</span>
-                          <span className="break-all text-xs leading-5 text-muted-foreground">{item.wechatId}</span>
-                        </div>
+                        <span className="min-w-0 flex-1 break-all leading-5">{item.wechatId}</span>
                       </CommandItem>
                     ))}
                   </CommandGroup>

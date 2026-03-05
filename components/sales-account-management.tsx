@@ -56,14 +56,52 @@ function formatDate(dateString: string) {
 }
 
 function SalesAccountRowActions({ account, onUpdated }: RowActionsProps) {
+  const [editOpen, setEditOpen] = useState(false);
+  const [wechatNicknameValue, setWechatNicknameValue] = useState(account.wechatNickname);
+  const [wechatIdValue, setWechatIdValue] = useState(account.wechatId);
+  const [savingAccount, setSavingAccount] = useState(false);
   const [remarkOpen, setRemarkOpen] = useState(false);
   const [remarkValue, setRemarkValue] = useState(account.remark ?? "");
   const [savingRemark, setSavingRemark] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(false);
 
   useEffect(() => {
+    setWechatNicknameValue(account.wechatNickname);
+    setWechatIdValue(account.wechatId);
     setRemarkValue(account.remark ?? "");
-  }, [account.remark]);
+  }, [account.remark, account.wechatId, account.wechatNickname]);
+
+  async function handleSaveAccountInfo() {
+    setSavingAccount(true);
+
+    try {
+      const response = await fetch(`/api/sales-accounts/${account.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          wechatNickname: wechatNicknameValue,
+          wechatId: wechatIdValue,
+        }),
+      });
+
+      const result = (await response.json()) as { message?: string };
+
+      if (!response.ok) {
+        toast.error(result.message ?? "账号信息更新失败");
+        return;
+      }
+
+      toast.success("账号信息更新成功");
+      setEditOpen(false);
+      await onUpdated();
+    } catch {
+      toast.error("账号信息更新失败，请稍后重试");
+    } finally {
+      setSavingAccount(false);
+    }
+  }
 
   async function handleSaveRemark() {
     setSavingRemark(true);
@@ -127,7 +165,60 @@ function SalesAccountRowActions({ account, onUpdated }: RowActionsProps) {
   }
 
   return (
-    <div className="flex items-center justify-end gap-2">
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            <PencilLine className="h-4 w-4" />
+            编辑账号
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>编辑销售账号</DialogTitle>
+            <DialogDescription>可修改销售微信号昵称和销售微信号（全局唯一）。</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none">销售微信号昵称</label>
+              <Input
+                maxLength={64}
+                placeholder="请输入销售微信号昵称"
+                value={wechatNicknameValue}
+                onChange={(event) => setWechatNicknameValue(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none">销售微信号</label>
+              <Input
+                maxLength={64}
+                placeholder="请输入销售微信号（全局唯一）"
+                value={wechatIdValue}
+                onChange={(event) => setWechatIdValue(event.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              取消
+            </Button>
+            <Button
+              onClick={handleSaveAccountInfo}
+              disabled={savingAccount || !wechatNicknameValue.trim() || !wechatIdValue.trim()}
+            >
+              {savingAccount ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  保存中...
+                </>
+              ) : (
+                "保存"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={remarkOpen} onOpenChange={setRemarkOpen}>
         <DialogTrigger asChild>
           <Button variant="outline" size="sm">
@@ -334,7 +425,7 @@ export function SalesAccountManagement() {
               <TableHead className="min-w-[180px]">销售微信号</TableHead>
               <TableHead className="min-w-[200px]">备注</TableHead>
               <TableHead className="w-[100px]">状态</TableHead>
-              <TableHead className="w-[220px] text-right">操作</TableHead>
+              <TableHead className="w-[320px] text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
