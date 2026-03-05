@@ -55,9 +55,9 @@ export const ROLE_NAVIGATION: Record<AppRole, NavItem[]> = {
   ],
   PART_TIME: [
     {
-      title: "兼职工作台",
+      title: "我的营销看板",
       href: "/dashboard/part-time",
-      icon: "contact",
+      icon: "bar-chart-3",
     },
   ],
 };

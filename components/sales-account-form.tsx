@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -17,9 +17,21 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { SalesAccountInput } from "@/lib/validations/sales-account";
 import { salesAccountSchema } from "@/lib/validations/sales-account";
+
+type PromoterOption = {
+  id: number;
+  username: string;
+  displayName: string | null;
+};
+
+type PromotersResponse = {
+  message?: string;
+  data?: PromoterOption[];
+};
 
 function todayString() {
   return new Intl.DateTimeFormat("zh-CN", {
@@ -31,15 +43,51 @@ function todayString() {
 
 export function SalesAccountForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingPromoters, setIsLoadingPromoters] = useState(true);
+  const [promoters, setPromoters] = useState<PromoterOption[]>([]);
+
   const form = useForm<SalesAccountInput>({
     resolver: zodResolver(salesAccountSchema),
     defaultValues: {
       promoter: "",
+      promoterUserId: undefined,
       wechatNickname: "",
       wechatId: "",
       remark: "",
     },
   });
+
+  useEffect(() => {
+    async function fetchPromoters() {
+      setIsLoadingPromoters(true);
+
+      try {
+        const response = await fetch("/api/users?role=PROMOTER&status=ENABLED", { method: "GET" });
+        const result = (await response.json()) as PromotersResponse;
+
+        if (!response.ok || !result.data) {
+          toast.error(result.message ?? "加载发展人列表失败");
+          return;
+        }
+
+        setPromoters(result.data);
+
+        if (result.data.length > 0 && !form.getValues("promoterUserId")) {
+          const firstPromoter = result.data[0];
+          form.setValue("promoterUserId", firstPromoter.id);
+          form.setValue("promoter", firstPromoter.displayName?.trim() || firstPromoter.username);
+        }
+      } catch {
+        toast.error("加载发展人列表失败，请稍后重试");
+      } finally {
+        setIsLoadingPromoters(false);
+      }
+    }
+
+    void fetchPromoters();
+  }, [form]);
+
+  const selectedPromoterUserId = form.watch("promoterUserId");
 
   async function onSubmit(values: SalesAccountInput) {
     setIsSubmitting(true);
@@ -62,7 +110,8 @@ export function SalesAccountForm() {
 
       toast.success("销售账号创建成功");
       form.reset({
-        promoter: "",
+        promoter: values.promoter,
+        promoterUserId: values.promoterUserId,
         wechatNickname: "",
         wechatId: "",
         remark: "",
@@ -91,9 +140,37 @@ export function SalesAccountForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>发展人</FormLabel>
-              <FormControl>
-                <Input placeholder="请输入发展人姓名" {...field} />
-              </FormControl>
+              <Select
+                value={selectedPromoterUserId ? String(selectedPromoterUserId) : ""}
+                onValueChange={(value) => {
+                  const selected = promoters.find((item) => item.id === Number(value));
+                  form.setValue("promoterUserId", Number(value), { shouldValidate: true });
+                  field.onChange(selected?.displayName?.trim() || selected?.username || "");
+                }}
+                disabled={isLoadingPromoters || promoters.length === 0}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        isLoadingPromoters
+                          ? "加载发展人中..."
+                          : promoters.length === 0
+                            ? "暂无可用发展人，请先在用户管理中创建并启用"
+                            : "请选择发展人"
+                      }
+                    />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {promoters.map((item) => (
+                    <SelectItem key={item.id} value={String(item.id)}>
+                      {item.displayName ?? item.username}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormDescription>仅可选择“已启用”的发展人用户。</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -142,7 +219,7 @@ export function SalesAccountForm() {
           )}
         />
 
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting || isLoadingPromoters || promoters.length === 0}>
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -62,11 +62,10 @@ type DashboardResponse = {
     accountChart: Array<Record<string, string | number>>;
     summary: {
       totalAddFriends: number;
-      totalConversions: number;
-      totalConversionRate: number;
       dailyAddFriends: number;
-      dailyConversions: number;
-      dailyConversionRate: number;
+      activeSalesAccountCount: number;
+      recordCount: number;
+      averageDailyAddFriends: number;
     };
   };
 };
@@ -89,10 +88,6 @@ function daysAgoString(daysAgo: number) {
   return `${year}-${month}-${day}`;
 }
 
-function rateText(rate: number) {
-  return `${(rate * 100).toFixed(2)}%`;
-}
-
 function shortDateLabel(date: string) {
   if (date.length !== 10) {
     return date;
@@ -101,7 +96,11 @@ function shortDateLabel(date: string) {
   return `${date.slice(5, 7)}-${date.slice(8, 10)}`;
 }
 
-export function PromoterMarketingDashboard() {
+function numberText(value: number) {
+  return Number.isInteger(value) ? value.toLocaleString() : value.toFixed(1);
+}
+
+export function PartTimeMarketingDashboard() {
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<"ACCOUNT" | "TOTAL">("ACCOUNT");
   const [salesSelectorOpen, setSalesSelectorOpen] = useState(false);
@@ -117,11 +116,10 @@ export function PromoterMarketingDashboard() {
   const [accountChart, setAccountChart] = useState<Array<Record<string, string | number>>>([]);
   const [summary, setSummary] = useState({
     totalAddFriends: 0,
-    totalConversions: 0,
-    totalConversionRate: 0,
     dailyAddFriends: 0,
-    dailyConversions: 0,
-    dailyConversionRate: 0,
+    activeSalesAccountCount: 0,
+    recordCount: 0,
+    averageDailyAddFriends: 0,
   });
 
   const accountChartConfig = useMemo(() => {
@@ -172,7 +170,7 @@ export function PromoterMarketingDashboard() {
         }
       }
 
-      const response = await fetch(`/api/promoter/marketing-dashboard?${params.toString()}`, {
+      const response = await fetch(`/api/part-time/marketing-dashboard?${params.toString()}`, {
         method: "GET",
       });
 
@@ -309,11 +307,11 @@ export function PromoterMarketingDashboard() {
         </div>
       </form>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>总添加好友数</CardDescription>
-            <CardTitle className="text-3xl font-medium tracking-tight md:text-4xl">
+            <CardTitle className="text-3xl font-medium tracking-tight text-sky-700 md:text-4xl dark:text-sky-300">
               {summary.totalAddFriends.toLocaleString()}
             </CardTitle>
           </CardHeader>
@@ -324,34 +322,8 @@ export function PromoterMarketingDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>总转化人数</CardDescription>
-            <CardTitle className="text-3xl font-medium tracking-tight md:text-4xl">
-              {summary.totalConversions.toLocaleString()}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xs text-muted-foreground">当前筛选区间累计转化人数</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>总平均转化率</CardDescription>
-            <CardTitle className="text-3xl font-medium tracking-tight md:text-4xl">
-              {rateText(summary.totalConversionRate)}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xs text-muted-foreground">总转化人数 / 总添加好友数</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
             <CardDescription>日添加好友数（结束日期）</CardDescription>
-            <CardTitle className="text-3xl font-medium tracking-tight md:text-4xl">
+            <CardTitle className="text-3xl font-medium tracking-tight text-emerald-700 md:text-4xl dark:text-emerald-300">
               {summary.dailyAddFriends.toLocaleString()}
             </CardTitle>
           </CardHeader>
@@ -362,34 +334,34 @@ export function PromoterMarketingDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>日转化人数（结束日期）</CardDescription>
-            <CardTitle className="text-3xl font-medium tracking-tight md:text-4xl">
-              {summary.dailyConversions.toLocaleString()}
+            <CardDescription>涉及销售账号数</CardDescription>
+            <CardTitle className="text-3xl font-medium tracking-tight text-violet-700 md:text-4xl dark:text-violet-300">
+              {summary.activeSalesAccountCount.toLocaleString()}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xs text-muted-foreground">结束日期当天转化人数</div>
+            <div className="text-xs text-muted-foreground">当前筛选区间内有数据的销售账号数量</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>日平均转化率（结束日期）</CardDescription>
-            <CardTitle className="text-3xl font-medium tracking-tight md:text-4xl">
-              {rateText(summary.dailyConversionRate)}
+            <CardDescription>日均新增（区间）</CardDescription>
+            <CardTitle className="text-3xl font-medium tracking-tight text-indigo-700 md:text-4xl dark:text-indigo-300">
+              {numberText(summary.averageDailyAddFriends)}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xs text-muted-foreground">日转化人数 / 日添加好友数</div>
+            <div className="text-xs text-muted-foreground">按筛选区间自然日平均新增好友</div>
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>营销数据看板</CardTitle>
+          <CardTitle>我的营销数据看板</CardTitle>
           <CardDescription>
-            可查看自己名下销售账号每天添加好友趋势，支持按账号查看或查看全部账号总新增趋势。
+            仅统计你负责的营销记录（兼职人员=本人），支持按销售微信查看各账号日新增，或查看全部账号总新增趋势。
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -431,12 +403,14 @@ export function PromoterMarketingDashboard() {
                 <XAxis dataKey="date" tickFormatter={shortDateLabel} tickLine={false} axisLine={false} />
                 <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Line type="monotone" dataKey="total" stroke="var(--color-total)" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="total" stroke="var(--color-total)" strokeWidth={2.2} dot={false} />
               </LineChart>
             </ChartContainer>
           )}
         </CardContent>
       </Card>
+
+      <div className="text-xs text-muted-foreground">记录条数：{summary.recordCount.toLocaleString()}</div>
     </div>
   );
 }

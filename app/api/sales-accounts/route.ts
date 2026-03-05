@@ -108,17 +108,42 @@ export async function POST(request: NextRequest) {
     }
 
     const data = parsed.data;
-    const normalizedPromoter = data.promoter.trim();
+    let normalizedPromoter = data.promoter.trim();
+    let promoterUserId: number | null = null;
 
-    const matchedPromoterUser = await prisma.user.findFirst({
-      where: {
-        role: "PROMOTER",
-        OR: [{ displayName: normalizedPromoter }, { username: normalizedPromoter }],
-      },
-      select: {
-        id: true,
-      },
-    });
+    if (data.promoterUserId) {
+      const selectedPromoterUser = await prisma.user.findFirst({
+        where: {
+          id: data.promoterUserId,
+          role: "PROMOTER",
+          isEnabled: true,
+        },
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+        },
+      });
+
+      if (!selectedPromoterUser) {
+        return NextResponse.json({ message: "所选发展人不存在或已停用" }, { status: 400 });
+      }
+
+      promoterUserId = selectedPromoterUser.id;
+      normalizedPromoter = selectedPromoterUser.displayName?.trim() || selectedPromoterUser.username;
+    } else {
+      const matchedPromoterUser = await prisma.user.findFirst({
+        where: {
+          role: "PROMOTER",
+          OR: [{ displayName: normalizedPromoter }, { username: normalizedPromoter }],
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      promoterUserId = matchedPromoterUser?.id ?? null;
+    }
 
     const created = await prisma.salesAccount.create({
       data: {
@@ -127,7 +152,7 @@ export async function POST(request: NextRequest) {
         wechatId: data.wechatId.trim(),
         remark: data.remark?.trim() ? data.remark.trim() : null,
         createdById: auth.session.userId,
-        promoterUserId: matchedPromoterUser?.id ?? null,
+        promoterUserId,
       },
       select: {
         id: true,

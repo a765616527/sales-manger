@@ -133,3 +133,51 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "服务器错误，请稍后重试" }, { status: 500 });
   }
 }
+
+export async function GET(request: NextRequest) {
+  const auth = ensureAdmin(request);
+  if (auth.error) {
+    return auth.error;
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const limitRaw = Number(searchParams.get("limit") ?? 50);
+    const limit = Number.isInteger(limitRaw) ? Math.min(Math.max(limitRaw, 1), 200) : 50;
+
+    const records = await prisma.marketingData.findMany({
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }, { id: "desc" }],
+      take: limit,
+      select: {
+        id: true,
+        date: true,
+        addFriendsCount: true,
+        conversionCount: true,
+        createdAt: true,
+        salesAccount: {
+          select: {
+            id: true,
+            promoter: true,
+            wechatNickname: true,
+            wechatId: true,
+          },
+        },
+        partTimeUser: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({
+      data: {
+        records,
+      },
+    });
+  } catch {
+    return NextResponse.json({ message: "服务器错误，请稍后重试" }, { status: 500 });
+  }
+}

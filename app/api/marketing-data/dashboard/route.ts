@@ -67,8 +67,14 @@ export async function GET(request: NextRequest) {
 
   const promoter = request.nextUrl.searchParams.get("promoter")?.trim() ?? "";
   const salesKeyword = request.nextUrl.searchParams.get("salesKeyword")?.trim() ?? "";
+  const salesAccountIdRaw = request.nextUrl.searchParams.get("salesAccountId")?.trim() ?? "";
   const partTimeUserIdRaw = request.nextUrl.searchParams.get("partTimeUserId")?.trim() ?? "";
+  const salesAccountId = salesAccountIdRaw ? Number(salesAccountIdRaw) : null;
   const partTimeUserId = partTimeUserIdRaw ? Number(partTimeUserIdRaw) : null;
+
+  if (salesAccountIdRaw && (!Number.isInteger(salesAccountId) || (salesAccountId as number) <= 0)) {
+    return NextResponse.json({ message: "销售微信参数不正确" }, { status: 400 });
+  }
 
   if (partTimeUserIdRaw && (!Number.isInteger(partTimeUserId) || (partTimeUserId as number) <= 0)) {
     return NextResponse.json({ message: "兼职人员参数不正确" }, { status: 400 });
@@ -85,13 +91,17 @@ export async function GET(request: NextRequest) {
     where.partTimeUserId = partTimeUserId;
   }
 
+  if (salesAccountId) {
+    where.salesAccountId = salesAccountId;
+  }
+
   const salesAccountWhere: Prisma.SalesAccountWhereInput = {};
 
   if (promoter) {
     salesAccountWhere.promoter = promoter;
   }
 
-  if (salesKeyword) {
+  if (salesKeyword && !salesAccountId) {
     salesAccountWhere.OR = [{ wechatNickname: { contains: salesKeyword } }, { wechatId: { contains: salesKeyword } }];
   }
 
@@ -99,7 +109,7 @@ export async function GET(request: NextRequest) {
     where.salesAccount = salesAccountWhere;
   }
 
-  const [records, promoterOptions, partTimeOptions] = await Promise.all([
+  const [records, promoterOptions, partTimeOptions, salesAccountOptions] = await Promise.all([
     prisma.marketingData.findMany({
       where,
       orderBy: [{ date: "asc" }, { salesAccountId: "asc" }],
@@ -107,15 +117,6 @@ export async function GET(request: NextRequest) {
         date: true,
         addFriendsCount: true,
         conversionCount: true,
-        salesAccountId: true,
-        partTimeUserId: true,
-        salesAccount: {
-          select: {
-            promoter: true,
-            wechatNickname: true,
-            wechatId: true,
-          },
-        },
       },
     }),
     prisma.salesAccount.findMany({
@@ -135,6 +136,22 @@ export async function GET(request: NextRequest) {
         displayName: true,
       },
     }),
+    prisma.salesAccount.findMany({
+      where: promoter
+        ? salesAccountId
+          ? {
+              OR: [{ promoter }, { id: salesAccountId }],
+            }
+          : { promoter }
+        : undefined,
+      orderBy: [{ promoter: "asc" }, { wechatNickname: "asc" }],
+      select: {
+        id: true,
+        promoter: true,
+        wechatNickname: true,
+        wechatId: true,
+      },
+    }),
   ]);
 
   const dateKeys: string[] = [];
@@ -149,52 +166,12 @@ export async function GET(request: NextRequest) {
     cursorDate.setDate(cursorDate.getDate() + 1);
   }
 
-  const seriesMap = new Map<
-    number,
-    {
-      key: string;
-      label: string;
-      promoter: string;
-      wechatNickname: string;
-      wechatId: string;
-    }
-  >();
-
-  for (const item of records) {
-    if (!seriesMap.has(item.salesAccountId)) {
-      const key = `s_${item.salesAccountId}`;
-      const label = `${item.salesAccount.promoter} / ${item.salesAccount.wechatNickname}`;
-
-      seriesMap.set(item.salesAccountId, {
-        key,
-        label,
-        promoter: item.salesAccount.promoter,
-        wechatNickname: item.salesAccount.wechatNickname,
-        wechatId: item.salesAccount.wechatId,
-      });
-    }
-  }
-
-  const series = Array.from(seriesMap.values());
-
-  const addFriendsChart = dateKeys.map((date) => {
-    const row: Record<string, string | number> = { date };
-    for (const item of series) {
-      row[item.key] = 0;
-    }
-    return row;
-  });
-
-  const conversionChart = dateKeys.map((date) => {
-    const row: Record<string, string | number> = { date };
-    for (const item of series) {
-      row[item.key] = 0;
-    }
-    return row;
-  });
-
-  const addFriendsMap = new Map(addFriendsChart.map((item) => [item.date as string, item]));
-  const conversionMap = new Map(conversionChart.map((item) => [item.date as string, item]));
+  const trendChart = dateKeys.map((date) => ({
+    date,
+    addFriends: 0,
+    conversions: 0,
+  }));
+  const trendMap = new Map(trendChart.map((item) => [item.date, item]));
 
   const endKey = formatDateKey(lastDate);
 
@@ -205,7 +182,6 @@ export async function GET(request: NextRequest) {
 
   for (const item of records) {
     const date = formatDateKey(item.date);
-    const seriesKey = `s_${item.salesAccountId}`;
 
     totalAddFriends += item.addFriendsCount;
     totalConversions += item.conversionCount;
@@ -215,14 +191,10 @@ export async function GET(request: NextRequest) {
       dailyConversions += item.conversionCount;
     }
 
-    const addRow = addFriendsMap.get(date);
-    if (addRow) {
-      addRow[seriesKey] = Number(addRow[seriesKey] ?? 0) + item.addFriendsCount;
-    }
-
-    const conversionRow = conversionMap.get(date);
-    if (conversionRow) {
-      conversionRow[seriesKey] = Number(conversionRow[seriesKey] ?? 0) + item.conversionCount;
+    const trendRow = trendMap.get(date);
+    if (trendRow) {
+      trendRow.addFriends += item.addFriendsCount;
+      trendRow.conversions += item.conversionCount;
     }
   }
 
@@ -234,13 +206,13 @@ export async function GET(request: NextRequest) {
         endDate: formatDateKey(lastDate),
         promoter,
         salesKeyword,
+        salesAccountId,
         partTimeUserId,
       },
       promoterOptions: promoterOptions.map((item) => item.promoter),
       partTimeOptions,
-      series,
-      addFriendsChart,
-      conversionChart,
+      salesAccountOptions,
+      trendChart,
       summary: {
         totalAddFriends,
         totalConversions,

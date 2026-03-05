@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const salesAccountSchema = z.object({
   promoter: z.string().min(1, "请输入发展人"),
+  promoterUserId: z.number().int().positive("发展人参数不正确").optional(),
   wechatNickname: z.string().min(1, "请输入销售微信号昵称"),
   wechatId: z
     .string()

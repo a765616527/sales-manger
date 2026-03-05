@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { PartTimeMarketingDashboard } from "@/components/part-time-marketing-dashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getServerSession } from "@/lib/auth/server";
 
@@ -15,12 +16,18 @@ export default async function PartTimePage() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>兼职工作台</CardTitle>
-        <CardDescription>当前是兼职角色占位页，后续可扩展每日任务、数据录入、跟进反馈等模块。</CardDescription>
-      </CardHeader>
-      <CardContent className="text-sm text-muted-foreground">请选择下一步要构建的兼职端页面。</CardContent>
-    </Card>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>我的营销看板</CardTitle>
+          <CardDescription>
+            仅查看自己负责的营销数据，支持按销售微信（可搜索选择）和时间范围筛选，查看每日添加好友趋势。
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PartTimeMarketingDashboard />
+        </CardContent>
+      </Card>
+    </div>
   );
 }

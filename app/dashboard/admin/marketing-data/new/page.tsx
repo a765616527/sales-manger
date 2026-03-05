@@ -16,12 +16,12 @@ export default async function MarketingDataCreatePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl">
+    <div className="mx-auto w-full max-w-7xl">
       <Card>
         <CardHeader>
           <CardTitle>营销数据添加</CardTitle>
           <CardDescription>
-            录入每日营销数据：日期、销售微信、添加好友数量、转化人数、兼职人员。
+            录入每日营销数据：日期、销售微信、添加好友数量、转化人数、兼职人员。下方支持查看最近录入记录并删除。
           </CardDescription>
         </CardHeader>
         <CardContent>

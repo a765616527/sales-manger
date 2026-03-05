@@ -345,22 +345,30 @@ export function UserManagement({ currentUserId }: { currentUserId: number }) {
   const [statusFilter, setStatusFilter] = useState<string>(STATUS_ALL);
   const [keyword, setKeyword] = useState("");
 
-  async function fetchUsers() {
+  async function fetchUsers(overrides?: {
+    roleFilter?: string;
+    statusFilter?: string;
+    keyword?: string;
+  }) {
     setLoading(true);
 
     try {
+      const nextRoleFilter = overrides?.roleFilter ?? roleFilter;
+      const nextStatusFilter = overrides?.statusFilter ?? statusFilter;
+      const nextKeyword = overrides?.keyword ?? keyword;
+
       const params = new URLSearchParams();
 
-      if (roleFilter !== ROLE_ALL) {
-        params.set("role", roleFilter);
+      if (nextRoleFilter !== ROLE_ALL) {
+        params.set("role", nextRoleFilter);
       }
 
-      if (statusFilter !== STATUS_ALL) {
-        params.set("status", statusFilter);
+      if (nextStatusFilter !== STATUS_ALL) {
+        params.set("status", nextStatusFilter);
       }
 
-      if (keyword.trim()) {
-        params.set("keyword", keyword.trim());
+      if (nextKeyword.trim()) {
+        params.set("keyword", nextKeyword.trim());
       }
 
       const response = await fetch(`/api/users?${params.toString()}`, {
@@ -418,33 +426,21 @@ export function UserManagement({ currentUserId }: { currentUserId: number }) {
     await fetchUsers();
   }
 
+  async function handleRoleFilterChange(nextRoleFilter: string) {
+    setRoleFilter(nextRoleFilter);
+    await fetchUsers({ roleFilter: nextRoleFilter });
+  }
+
   async function handleReset() {
     setRoleFilter(ROLE_ALL);
     setStatusFilter(STATUS_ALL);
     setKeyword("");
-
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/users", { method: "GET" });
-      const result = (await response.json()) as UsersResponse;
-
-      if (!response.ok || !result.data) {
-        toast.error(result.message ?? "重置后加载失败");
-        return;
-      }
-
-      setUsers(result.data);
-    } catch {
-      toast.error("重置后加载失败，请稍后重试");
-    } finally {
-      setLoading(false);
-    }
+    await fetchUsers({ roleFilter: ROLE_ALL, statusFilter: STATUS_ALL, keyword: "" });
   }
 
   return (
     <div className="space-y-4">
-      <Tabs value={roleFilter} onValueChange={setRoleFilter}>
+      <Tabs value={roleFilter} onValueChange={(value) => void handleRoleFilterChange(value)}>
         <TabsList className="grid w-full grid-cols-4 md:w-[520px]">
           <TabsTrigger value={ROLE_ALL}>全部</TabsTrigger>
           <TabsTrigger value="ADMIN">管理员</TabsTrigger>

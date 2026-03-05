@@ -1,9 +1,7 @@
-import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
-import { getSessionFromRequest } from "@/lib/auth/session";
-import { getPromoterSalesAccountScope } from "@/lib/auth/scopes";
 import { formatDateKey, parseDateOnly } from "@/lib/date";
+import { getSessionFromRequest } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 
 function normalizeDate(raw: string | null, fallback: Date) {
@@ -26,7 +24,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "未登录或登录已失效" }, { status: 401 });
   }
 
-  if (session.role !== "PROMOTER") {
+  if (session.role !== "PART_TIME") {
     return NextResponse.json({ message: "无权限执行该操作" }, { status: 403 });
   }
 
@@ -56,40 +54,31 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "销售微信参数不正确" }, { status: 400 });
   }
 
-  const scope = await getPromoterSalesAccountScope(session.userId);
-
-  const salesAccountAndConditions: Prisma.SalesAccountWhereInput[] = [scope];
-
-  if (salesAccountId) {
-    salesAccountAndConditions.push({
-      id: salesAccountId,
-    });
-  } else if (salesKeyword) {
-    salesAccountAndConditions.push({
-      OR: [{ wechatNickname: { contains: salesKeyword } }, { wechatId: { contains: salesKeyword } }],
-    });
-  }
-
-  const salesAccountWhere: Prisma.SalesAccountWhereInput = {
-    AND: salesAccountAndConditions,
-  };
-
-  const where: Prisma.MarketingDataWhereInput = {
+  const recordsWhere = {
     date: {
       gte: startDate,
       lte: endDate,
     },
-    salesAccount: salesAccountWhere,
+    partTimeUserId: session.userId,
+    salesAccount:
+      salesAccountId !== null
+        ? {
+            id: salesAccountId,
+          }
+        : salesKeyword
+          ? {
+              OR: [{ wechatNickname: { contains: salesKeyword } }, { wechatId: { contains: salesKeyword } }],
+            }
+          : undefined,
   };
 
   const [records, salesAccountOptions] = await Promise.all([
     prisma.marketingData.findMany({
-      where,
+      where: recordsWhere,
       orderBy: [{ date: "asc" }, { salesAccountId: "asc" }],
       select: {
         date: true,
         addFriendsCount: true,
-        conversionCount: true,
         salesAccountId: true,
         salesAccount: {
           select: {
@@ -100,7 +89,13 @@ export async function GET(request: NextRequest) {
       },
     }),
     prisma.salesAccount.findMany({
-      where: scope,
+      where: {
+        marketingData: {
+          some: {
+            partTimeUserId: session.userId,
+          },
+        },
+      },
       orderBy: [{ wechatNickname: "asc" }, { wechatId: "asc" }],
       select: {
         id: true,
@@ -150,9 +145,11 @@ export async function GET(request: NextRequest) {
 
   const accountChart = dateKeys.map((date) => {
     const row: Record<string, string | number> = { date, total: 0 };
+
     for (const item of series) {
       row[item.key] = 0;
     }
+
     return row;
   });
 
@@ -161,20 +158,16 @@ export async function GET(request: NextRequest) {
   const endKey = formatDateKey(lastDate);
 
   let totalAddFriends = 0;
-  let totalConversions = 0;
   let dailyAddFriends = 0;
-  let dailyConversions = 0;
 
   for (const item of records) {
     const date = formatDateKey(item.date);
     const seriesKey = `s_${item.salesAccountId}`;
 
     totalAddFriends += item.addFriendsCount;
-    totalConversions += item.conversionCount;
 
     if (date === endKey) {
       dailyAddFriends += item.addFriendsCount;
-      dailyConversions += item.conversionCount;
     }
 
     const row = chartMap.get(date);
@@ -183,6 +176,10 @@ export async function GET(request: NextRequest) {
       row.total = Number(row.total ?? 0) + item.addFriendsCount;
     }
   }
+
+  const activeSalesAccountCount = series.length;
+  const recordCount = records.length;
+  const averageDailyAddFriends = dateKeys.length > 0 ? totalAddFriends / dateKeys.length : 0;
 
   return NextResponse.json({
     message: "查询成功",
@@ -198,11 +195,10 @@ export async function GET(request: NextRequest) {
       accountChart,
       summary: {
         totalAddFriends,
-        totalConversions,
-        totalConversionRate: totalAddFriends > 0 ? totalConversions / totalAddFriends : 0,
         dailyAddFriends,
-        dailyConversions,
-        dailyConversionRate: dailyAddFriends > 0 ? dailyConversions / dailyAddFriends : 0,
+        activeSalesAccountCount,
+        recordCount,
+        averageDailyAddFriends,
       },
     },
   });
