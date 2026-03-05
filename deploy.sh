@@ -35,16 +35,14 @@ current_image="$(get_compose_value app_image)"
 current_port_binding="$(get_compose_value app_port_binding)"
 current_admin_user="$(get_compose_value admin_init_username)"
 current_admin_pass="$(get_compose_value admin_init_password)"
+current_mysql_data_path="$(get_compose_value mysql_data_path)"
 
-if [[ -z "$current_image" || -z "$current_port_binding" ]]; then
+if [[ -z "$current_image" || -z "$current_port_binding" || -z "$current_mysql_data_path" ]]; then
   echo "解析 $COMPOSE_FILE 失败，请检查 x-deploy 配置块。"
   exit 1
 fi
 
 current_port="${current_port_binding%%:*}"
-
-read -r -p "Docker 镜像名 [${current_image}]: " input_image
-app_image="${input_image:-$current_image}"
 
 read -r -p "项目对外端口 [${current_port}]: " input_port
 app_port="${input_port:-$current_port}"
@@ -72,15 +70,28 @@ if [[ -z "$admin_pass" ]]; then
   exit 1
 fi
 
-set_compose_value app_image "$app_image"
+mysql_data_dir="$current_mysql_data_path"
+if [[ "$mysql_data_dir" == ./* ]]; then
+  mysql_data_dir="${mysql_data_dir#./}"
+fi
+
+if [[ -e "$mysql_data_dir" ]]; then
+  echo "检测到目录或文件已存在：$mysql_data_dir"
+  echo "判定为已安装。请先移动该目录，或删除该目录后再重新安装。"
+  exit 1
+fi
+
+mkdir -p "$mysql_data_dir"
+
 set_compose_value app_port_binding "${app_port}:3000"
 set_compose_value admin_init_username "$admin_user"
 set_compose_value admin_init_password "$admin_pass"
 
 echo "已写入部署配置到 $COMPOSE_FILE"
-echo "  镜像: $app_image"
+echo "  镜像: $current_image（固定，不可交互修改）"
 echo "  端口: ${app_port}:3000"
 echo "  管理员: $admin_user"
+echo "  MySQL 数据目录: $mysql_data_dir"
 
 echo "开始部署..."
 docker compose pull app || true

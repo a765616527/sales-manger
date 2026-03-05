@@ -97,7 +97,7 @@ ADMIN_INIT_PASSWORD="admin123456"
 npm install
 ```
 
-### 4. 同步数据库并初始化数据
+### 4. 同步数据库并初始化数据（本地开发）
 
 ```bash
 npm run prisma:generate
@@ -112,6 +112,52 @@ npm run dev
 ```
 
 访问：`http://localhost:3000`
+
+## Docker Compose 一键部署（生产）
+
+### 部署文件说明
+
+- `docker-compose.yml`
+  - 应用镜像固定为：`sales-manger:latest`
+  - 包含 3 个服务：`app`、`mysql`、`watchtower`
+  - MySQL 数据目录绑定到：`./sales-manger-deploy`（不使用 Docker volume）
+  - Watchtower 仅检查带 `com.centurylinklabs.watchtower.enable=true` 的容器
+  - `mysql` 已显式设置为 `watchtower.enable=false`，不会被自动更新
+- `deploy.sh`
+  - 一键部署脚本
+  - 交互式输入：项目端口、初始管理员账号、初始管理员密码
+  - 镜像名不允许交互修改，始终以 `docker-compose.yml` 中配置为准
+  - 部署前会检查 `sales-manger-deploy` 目录
+    - 若目录已存在，判定为已安装并直接退出
+    - 需要先移动或删除该目录，再重新执行安装
+
+### 部署前准备
+
+1. 安装 Docker 和 Docker Compose 插件
+2. 构建并准备镜像 `sales-manger:latest`
+3. 进入项目根目录
+
+### 一键部署命令
+
+```bash
+chmod +x deploy.sh
+./deploy.sh
+```
+
+### 脚本执行流程
+
+1. 读取并回写 `docker-compose.yml` 中的部署参数（端口、管理员账号密码）
+2. 检查 `sales-manger-deploy` 目录是否已存在
+3. 拉取应用镜像（`docker compose pull app`）
+4. 启动 MySQL 并等待健康检查通过
+5. 启动应用与 watchtower
+
+### 生产初始化行为
+
+- 容器启动时仅执行：
+  - `prisma db push`（同步数据库结构）
+  - 管理员账号初始化/更新（基于 `ADMIN_INIT_USERNAME`、`ADMIN_INIT_PASSWORD`）
+- 不执行种子数据初始化（不写入示例账号、示例业务数据）
 
 ## 主要路由
 
