@@ -66,10 +66,7 @@
 
 统一登录入口：`/login`
 
-示例账号：
-- 管理员：`admin / admin123456`
-- 发展人：`promoter_zhang / promoter123`
-- 兼职：`parttime_liu / parttime123`
+生产环境请使用部署时初始化的管理员账号，并在后台按需创建其他角色账号。
 
 ## 技术栈
 

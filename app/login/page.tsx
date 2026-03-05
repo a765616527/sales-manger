@@ -25,10 +25,8 @@ export default async function LoginPage() {
         <CardContent className="space-y-4">
           <LoginForm />
           <div className="rounded-lg border border-border/60 bg-background/70 p-3 text-xs leading-6 text-muted-foreground">
-            <p>示例账号：</p>
-            <p>管理员：admin / admin123456</p>
-            <p>发展人：promoter_zhang / promoter123</p>
-            <p>兼职：parttime_liu / parttime123</p>
+            <p>请使用已分配账号登录。</p>
+            <p>生产环境请妥善保管管理员账号与密码。</p>
           </div>
         </CardContent>
       </Card>
