@@ -311,7 +311,7 @@ export function PartTimeMarketingDashboard() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>总添加好友数</CardDescription>
-            <CardTitle className="text-3xl font-medium tracking-tight text-sky-700 md:text-4xl dark:text-sky-300">
+            <CardTitle className="text-2xl font-medium tracking-tight text-foreground md:text-3xl">
               {summary.totalAddFriends.toLocaleString()}
             </CardTitle>
           </CardHeader>
@@ -323,7 +323,7 @@ export function PartTimeMarketingDashboard() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>日添加好友数（结束日期）</CardDescription>
-            <CardTitle className="text-3xl font-medium tracking-tight text-emerald-700 md:text-4xl dark:text-emerald-300">
+            <CardTitle className="text-2xl font-medium tracking-tight text-foreground md:text-3xl">
               {summary.dailyAddFriends.toLocaleString()}
             </CardTitle>
           </CardHeader>
@@ -335,7 +335,7 @@ export function PartTimeMarketingDashboard() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>涉及销售账号数</CardDescription>
-            <CardTitle className="text-3xl font-medium tracking-tight text-violet-700 md:text-4xl dark:text-violet-300">
+            <CardTitle className="text-2xl font-medium tracking-tight text-foreground md:text-3xl">
               {summary.activeSalesAccountCount.toLocaleString()}
             </CardTitle>
           </CardHeader>
@@ -347,7 +347,7 @@ export function PartTimeMarketingDashboard() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>日均新增（区间）</CardDescription>
-            <CardTitle className="text-3xl font-medium tracking-tight text-indigo-700 md:text-4xl dark:text-indigo-300">
+            <CardTitle className="text-2xl font-medium tracking-tight text-foreground md:text-3xl">
               {numberText(summary.averageDailyAddFriends)}
             </CardTitle>
           </CardHeader>

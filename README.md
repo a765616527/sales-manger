@@ -128,7 +128,7 @@ npm run dev
 - 发展人占位页：`/dashboard/promoter`
 - 发展人 - 我的销售账号：`/dashboard/promoter/sales-accounts`
 - 发展人 - 我的营销看板：`/dashboard/promoter/marketing-dashboard`
-- 兼职占位页：`/dashboard/part-time`
+- 兼职 - 我的营销看板：`/dashboard/part-time`
 
 ## GitHub 推送规范（必须遵守）
 

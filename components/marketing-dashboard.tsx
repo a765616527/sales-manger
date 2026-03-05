@@ -359,7 +359,7 @@ export function MarketingDashboard() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>总添加好友数</CardDescription>
-            <CardTitle className="text-3xl font-medium tracking-tight text-sky-700 md:text-4xl dark:text-sky-300">
+            <CardTitle className="text-2xl font-medium tracking-tight text-foreground md:text-3xl">
               {summary.totalAddFriends.toLocaleString()}
             </CardTitle>
           </CardHeader>
@@ -371,7 +371,7 @@ export function MarketingDashboard() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>总转化人数</CardDescription>
-            <CardTitle className="text-3xl font-medium tracking-tight text-emerald-700 md:text-4xl dark:text-emerald-300">
+            <CardTitle className="text-2xl font-medium tracking-tight text-foreground md:text-3xl">
               {summary.totalConversions.toLocaleString()}
             </CardTitle>
           </CardHeader>
@@ -383,7 +383,7 @@ export function MarketingDashboard() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>总平均转化率</CardDescription>
-            <CardTitle className="text-3xl font-medium tracking-tight text-violet-700 md:text-4xl dark:text-violet-300">
+            <CardTitle className="text-2xl font-medium tracking-tight text-foreground md:text-3xl">
               {rateText(summary.totalConversionRate)}
             </CardTitle>
           </CardHeader>
@@ -397,7 +397,7 @@ export function MarketingDashboard() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>日添加好友数（结束日期）</CardDescription>
-            <CardTitle className="text-3xl font-medium tracking-tight text-cyan-700 md:text-4xl dark:text-cyan-300">
+            <CardTitle className="text-2xl font-medium tracking-tight text-foreground md:text-3xl">
               {summary.dailyAddFriends.toLocaleString()}
             </CardTitle>
           </CardHeader>
@@ -409,7 +409,7 @@ export function MarketingDashboard() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>日转化人数（结束日期）</CardDescription>
-            <CardTitle className="text-3xl font-medium tracking-tight text-teal-700 md:text-4xl dark:text-teal-300">
+            <CardTitle className="text-2xl font-medium tracking-tight text-foreground md:text-3xl">
               {summary.dailyConversions.toLocaleString()}
             </CardTitle>
           </CardHeader>
@@ -421,7 +421,7 @@ export function MarketingDashboard() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>日平均转化率（结束日期）</CardDescription>
-            <CardTitle className="text-3xl font-medium tracking-tight text-indigo-700 md:text-4xl dark:text-indigo-300">
+            <CardTitle className="text-2xl font-medium tracking-tight text-foreground md:text-3xl">
               {rateText(summary.dailyConversionRate)}
             </CardTitle>
           </CardHeader>
