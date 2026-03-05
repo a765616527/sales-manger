@@ -22,10 +22,18 @@ if [ -z "${ADMIN_INIT_USERNAME:-}" ] || [ -z "${ADMIN_INIT_PASSWORD:-}" ]; then
 fi
 
 echo "[start] DATABASE_URL 已注入，开始同步数据库结构..."
-npx prisma db push --skip-generate
+if [ -f "./node_modules/prisma/build/index.js" ]; then
+  node ./node_modules/prisma/build/index.js db push --skip-generate
+else
+  echo "[start] 未找到 Prisma CLI，跳过 db push。"
+fi
 
 echo "[start] 初始化管理员账号..."
 node scripts/bootstrap-admin.mjs
 
 echo "[start] 启动 Next.js..."
+if [ -f "./server.js" ]; then
+  exec node ./server.js
+fi
+
 exec npm run start

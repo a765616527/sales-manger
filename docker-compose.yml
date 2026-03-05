@@ -57,7 +57,7 @@ services:
       retries: 10
 
   watchtower:
-    image: containrrr/watchtower:1.7.1
+    image: containrrr/watchtower:latest
     container_name: sales-manger-watchtower
     restart: unless-stopped
     volumes:
