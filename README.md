@@ -118,15 +118,16 @@ npm run dev
 ### 部署文件说明
 
 - `docker-compose.yml`
-  - 应用镜像固定为：`sales-manger:latest`
+  - 应用镜像固定为：`arxuan123/sales-manger:latest`
   - 包含 3 个服务：`app`、`mysql`、`watchtower`
-  - MySQL 数据目录绑定到：`./sales-manger-deploy`（不使用 Docker volume）
+  - MySQL 数据目录绑定到：`./mysql-data`（相对于 Compose 文件所在目录，不使用 Docker volume）
   - Watchtower 仅检查带 `com.centurylinklabs.watchtower.enable=true` 的容器
   - `mysql` 已显式设置为 `watchtower.enable=false`，不会被自动更新
 - `deploy.sh`
   - 一键部署脚本
   - 交互式输入：项目端口、初始管理员账号、初始管理员密码
   - 镜像名不允许交互修改，始终以 `docker-compose.yml` 中配置为准
+  - 脚本会自动创建 `sales-manger-deploy` 目录，并下载 `docker-compose.yml` 到该目录中再部署
   - 部署前会检查 `sales-manger-deploy` 目录
     - 若目录已存在，判定为已安装并直接退出
     - 需要先移动或删除该目录，再重新执行安装
@@ -134,32 +135,37 @@ npm run dev
 ### 部署前准备
 
 1. 安装 Docker 和 Docker Compose 插件
-2. 构建并准备镜像 `sales-manger:latest`
-3. 进入项目根目录
+2. 确认 DockerHub 可拉取镜像 `arxuan123/sales-manger:latest`
+3. 选择一个空目录作为部署目录
 
 ### 一键部署命令
 
 ```bash
-# 1) 下载 Docker Compose 文件
-curl -fsSL "https://raw.githubusercontent.com/a765616527/sales-manger/refs/heads/main/docker-compose.yml" -o docker-compose.yml
-
-# 2) 下载部署脚本
+# 1) 下载部署脚本
 curl -fsSL "https://raw.githubusercontent.com/a765616527/sales-manger/refs/heads/main/deploy.sh" -o deploy.sh
 
-# 3) 赋予脚本执行权限
+# 2) 赋予脚本执行权限
 chmod +x deploy.sh
 
-# 4) 执行一键部署
+# 3) 执行一键部署
 ./deploy.sh
+```
+
+脚本执行时会自动下载 Compose 文件：
+
+```text
+https://raw.githubusercontent.com/a765616527/sales-manger/refs/heads/main/docker-compose.yml
 ```
 
 ### 脚本执行流程
 
-1. 读取并回写 `docker-compose.yml` 中的部署参数（端口、管理员账号密码）
-2. 检查 `sales-manger-deploy` 目录是否已存在
-3. 拉取应用镜像（`docker compose pull app`）
-4. 启动 MySQL 并等待健康检查通过
-5. 启动应用与 watchtower
+1. 检查 `sales-manger-deploy` 目录是否已存在（存在则判定已安装并退出）
+2. 创建 `sales-manger-deploy` 目录并下载 `docker-compose.yml` 到该目录
+3. 读取并回写 Compose 中的部署参数（端口、管理员账号密码）
+4. 创建 MySQL 数据目录 `sales-manger-deploy/mysql-data`
+5. 拉取应用镜像（`docker compose pull app`）
+6. 启动 MySQL 并等待健康检查通过
+7. 启动应用与 watchtower
 
 ### 生产初始化行为
 
@@ -197,4 +203,20 @@ git commit -m "中文：本次更新内容说明"
 git tag -a v1.0.0 -m "中文：v1.0.0 更新内容说明"
 git push origin <分支名>
 git push origin v1.0.0
+```
+
+## DockerHub 镜像发布规范（必须遵守）
+
+- Compose 统一拉取镜像：`arxuan123/sales-manger:latest`。
+- 每次发布镜像必须同时推送 2 个 Tag：
+  - 日期备份 Tag：`YYYYMMDD`（例如：`20260305`）
+  - 最新 Tag：`latest`
+- 不允许只推送单个 Tag。
+
+推荐流程示例：
+
+```bash
+docker build -t arxuan123/sales-manger:20260305 -t arxuan123/sales-manger:latest .
+docker push arxuan123/sales-manger:20260305
+docker push arxuan123/sales-manger:latest
 ```

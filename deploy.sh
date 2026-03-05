@@ -1,21 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-COMPOSE_FILE="docker-compose.yml"
+DEPLOY_DIR="sales-manger-deploy"
+COMPOSE_FILE="${DEPLOY_DIR}/docker-compose.yml"
 COMPOSE_URL="https://raw.githubusercontent.com/a765616527/sales-manger/refs/heads/main/docker-compose.yml"
 SCRIPT_URL="https://raw.githubusercontent.com/a765616527/sales-manger/refs/heads/main/deploy.sh"
 
-if [[ ! -f "$COMPOSE_FILE" ]]; then
-  if ! command -v curl >/dev/null 2>&1; then
-    echo "未找到 $COMPOSE_FILE，且系统未安装 curl，无法自动下载。"
-    echo "请手动下载：$COMPOSE_URL"
-    exit 1
-  fi
-
-  echo "未找到 $COMPOSE_FILE，正在下载..."
-  curl -fsSL "$COMPOSE_URL" -o "$COMPOSE_FILE"
-  echo "已下载 $COMPOSE_FILE"
-fi
+echo "脚本下载地址：$SCRIPT_URL"
+echo "Compose 下载地址：$COMPOSE_URL"
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "未检测到 docker，请先安装 Docker。"
@@ -27,8 +19,22 @@ if ! docker compose version >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "脚本下载地址：$SCRIPT_URL"
-echo "Compose 下载地址：$COMPOSE_URL"
+if ! command -v curl >/dev/null 2>&1; then
+  echo "系统未安装 curl，无法自动下载部署文件。"
+  echo "请先安装 curl 后重试。"
+  exit 1
+fi
+
+if [[ -e "$DEPLOY_DIR" ]]; then
+  echo "检测到目录已存在：$DEPLOY_DIR"
+  echo "判定为已安装。请先移动该目录，或删除该目录后再重新安装。"
+  exit 1
+fi
+
+mkdir -p "$DEPLOY_DIR"
+echo "正在下载部署文件到 $DEPLOY_DIR ..."
+curl -fsSL "$COMPOSE_URL" -o "$COMPOSE_FILE"
+echo "已下载 $COMPOSE_FILE"
 
 get_compose_value() {
   local key="$1"
@@ -83,17 +89,14 @@ if [[ -z "$admin_pass" ]]; then
 fi
 
 mysql_data_dir="$current_mysql_data_path"
-if [[ "$mysql_data_dir" == ./* ]]; then
+if [[ "$mysql_data_dir" == /* ]]; then
+  mysql_data_dir_abs="$mysql_data_dir"
+else
   mysql_data_dir="${mysql_data_dir#./}"
+  mysql_data_dir_abs="${DEPLOY_DIR}/${mysql_data_dir}"
 fi
 
-if [[ -e "$mysql_data_dir" ]]; then
-  echo "检测到目录或文件已存在：$mysql_data_dir"
-  echo "判定为已安装。请先移动该目录，或删除该目录后再重新安装。"
-  exit 1
-fi
-
-mkdir -p "$mysql_data_dir"
+mkdir -p "$mysql_data_dir_abs"
 
 set_compose_value app_port_binding "${app_port}:3000"
 set_compose_value admin_init_username "$admin_user"
@@ -103,11 +106,12 @@ echo "已写入部署配置到 $COMPOSE_FILE"
 echo "  镜像: $current_image（固定，不可交互修改）"
 echo "  端口: ${app_port}:3000"
 echo "  管理员: $admin_user"
-echo "  MySQL 数据目录: $mysql_data_dir"
+echo "  MySQL 数据目录: $mysql_data_dir_abs"
 
 echo "开始部署..."
-docker compose pull app || true
-docker compose up -d mysql
+compose_cmd=(docker compose -f "$COMPOSE_FILE" --project-directory "$DEPLOY_DIR")
+"${compose_cmd[@]}" pull app || true
+"${compose_cmd[@]}" up -d mysql
 
 echo "等待 MySQL 健康检查通过..."
 for _ in $(seq 1 60); do
@@ -118,7 +122,7 @@ for _ in $(seq 1 60); do
   sleep 2
  done
 
-docker compose up -d app watchtower
+"${compose_cmd[@]}" up -d app watchtower
 
 echo "部署完成。"
-docker compose ps
+"${compose_cmd[@]}" ps

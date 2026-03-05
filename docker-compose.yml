@@ -1,7 +1,7 @@
 name: sales-manger
 
 x-deploy:
-  app_image: &app_image "sales-manger:latest"
+  app_image: &app_image "arxuan123/sales-manger:latest"
   app_port_binding: &app_port_binding "3000:3000"
   admin_init_username: &admin_init_username "admin"
   admin_init_password: &admin_init_password "admin123456"
@@ -10,7 +10,7 @@ x-deploy:
   mysql_database: &mysql_database "sales_manager"
   mysql_user: &mysql_user "sales_user"
   mysql_password: &mysql_password "change-this-mysql-password"
-  mysql_data_path: &mysql_data_path "./sales-manger-deploy"
+  mysql_data_path: &mysql_data_path "./mysql-data"
 
 services:
   app:
@@ -50,7 +50,7 @@ services:
       MYSQL_USER: *mysql_user
       MYSQL_PASSWORD: *mysql_password
     volumes:
-      - "./sales-manger-deploy:/var/lib/mysql"
+      - "./mysql-data:/var/lib/mysql"
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 10s
