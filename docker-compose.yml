@@ -35,7 +35,7 @@ services:
       - com.centurylinklabs.watchtower.enable=true
 
   mysql:
-    image: mysql:8.4
+    image: mysql:8.0
     container_name: sales-manger-mysql
     restart: unless-stopped
     labels:
